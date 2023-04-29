@@ -1,3 +1,6 @@
+using JetBrains.Annotations;
+using System.Runtime.ConstrainedExecution;
+using TMPro;
 using UnityEngine;
 
 public class PlayerBehaviour : MonoBehaviour
@@ -10,12 +13,76 @@ public class PlayerBehaviour : MonoBehaviour
   public float upwardSpeedLimit;
   public float landingForce;
 
-  [Header("Gun")]
+  [Header("Gun Basics")]
+  public GameObject crosshair;
+  public GameObject bullet;
   public float bulletVelocity;
-  public float reloadTime;
-  public float shotInterval;
+
+  [Header("Deviation")]
   [Tooltip("In degrees")]
-  public float deviation;
+  public float maxDeviation;
+  public float deviationReductionRate;
+  public float deviationPerShot;
+  private float currentDeviation;
+  
+  [Header("Ammo and Reloading")]
+  public int rightAmmo;
+  public int leftAmmo;
+  public float reloadTime;
+  private const int maxAmmo = 17;
+  private float reloadTimeRemaining;
+  private bool presentlyReloading;
+
+  [Header("UI")]
+  public TextMeshProUGUI rightAmmoCounter;
+  public TextMeshProUGUI leftAmmoCounter;
+  public GameObject reloadBar;
+
+  // Start is called before the first frame update
+  void Start()
+  {
+    leftAmmo = maxAmmo;
+    rightAmmo = maxAmmo;
+    currentDeviation = 0.0f;
+    presentlyReloading = false;
+  }
+
+  // Update is called once per frame
+  void Update()
+  {
+    handleUI();
+
+    //Deviation reduction over time
+    currentDeviation -= deviationReductionRate * Time.deltaTime;
+    if (currentDeviation <= 0.0f)
+      currentDeviation = 0.0f;
+    if (currentDeviation > maxDeviation)
+      currentDeviation = maxDeviation;
+
+    //Reloading
+    if (Input.GetKey(KeyCode.R) &&
+      (rightAmmo < maxAmmo || leftAmmo < maxAmmo))
+    {
+      presentlyReloading = true;
+    }
+    else
+    {
+      presentlyReloading = false;
+    }
+
+    if (!presentlyReloading)
+    {
+      reloadBar.SetActive(false);
+      reloadTimeRemaining = reloadTime;
+      handleMovement();
+      handleShooting();
+    }
+    else
+    {
+      reloadBar.SetActive(true);
+      handleReloading();
+    }
+  }
 
   public void handleMovement()
   {
@@ -46,15 +113,78 @@ public class PlayerBehaviour : MonoBehaviour
     GetComponent<Rigidbody2D>().velocity = currentVelocity;
   }
 
-  // Start is called before the first frame update
-  void Start()
+  public void handleCrouching()
   {
-
+    //TODO
   }
 
-  // Update is called once per frame
-  void Update()
+  public void handleReloading()
   {
-    handleMovement();
+    reloadTimeRemaining -= Time.deltaTime;
+    reloadBar.transform.localScale = new Vector3(10.0f * (reloadTimeRemaining / reloadTime), reloadBar.transform.localScale.y, reloadBar.transform.localScale.z);
+    if (reloadTimeRemaining <= 0.0f)
+    {
+      //TODO play reloaded sound
+      if (rightAmmo < leftAmmo)
+        rightAmmo = maxAmmo;
+      else
+        leftAmmo = maxAmmo;
+      reloadTimeRemaining += reloadTime;
+    }
+  }
+
+  public void handleUI()
+  {
+    rightAmmoCounter.text = rightAmmo.ToString();
+    leftAmmoCounter.text = leftAmmo.ToString();
+  }
+
+  public void gunShot()
+  {
+    //TODO play BANG sound
+
+    //Determine the shot direction
+    //https://www.youtube.com/watch?v=HH6JzH5pTGo
+    Vector3 baseDirection = crosshair.transform.position - transform.position;
+    float rotationAngle = Random.Range(-currentDeviation, currentDeviation);
+    Vector3 finalShotDirection = Quaternion.AngleAxis(rotationAngle, Vector3.forward) * baseDirection;
+    finalShotDirection.z = 0.0f;
+    finalShotDirection.Normalize();
+
+    GameObject newBullet = Instantiate(bullet);
+    newBullet.transform.position = GetComponent<Transform>().position + finalShotDirection;
+    newBullet.GetComponent<Rigidbody2D>().velocity = finalShotDirection * bulletVelocity;
+
+    //Increase the deviation
+    currentDeviation += deviationPerShot;
+  }
+
+  public void handleShooting()
+  {
+    //Left
+    if (Input.GetMouseButtonDown(0))
+    {
+      if (leftAmmo > 0)
+      {
+        --leftAmmo;
+        gunShot();
+      }
+      else
+      {
+        //TODO play CHIK sound
+      }
+    }
+    if (Input.GetMouseButtonDown(1))
+    {
+      if (rightAmmo > 0)
+      {
+        --rightAmmo;
+        gunShot();
+      }
+      else
+      {
+        //TODO play CHIK sound
+      }  
+    }
   }
 }

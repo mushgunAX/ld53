@@ -20,13 +20,18 @@ public class PlayerBulletBehaviour : MonoBehaviour
       Destroy(gameObject);
   }
 
-  public void OnCollisionEnter2D(Collision2D collision)
+  public void OnTriggerEnter2D(Collider2D collision)
   {
-    Debug.Log(collision.gameObject.name);
     if (collision.gameObject.tag != "Player")
     {
       //TODO play sound
       //TODO particle effects
+
+      if (collision.gameObject.GetComponent<PistolEnemy>() != null)
+      {
+        collision.gameObject.GetComponent<PistolEnemy>().stunTimeRemaining = collision.gameObject.GetComponent<PistolEnemy>().stunTime;
+        collision.gameObject.GetComponent<PistolEnemy>().health -= 1;
+      }
       Destroy(gameObject);
     }
   }

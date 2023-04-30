@@ -2,9 +2,12 @@ using JetBrains.Annotations;
 using System.Runtime.ConstrainedExecution;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerBehaviour : MonoBehaviour
 {
+  public bool alive;
+
   //Parameters to tweak
   [Header("Movement")]
   public float moveForce;
@@ -45,6 +48,7 @@ public class PlayerBehaviour : MonoBehaviour
     rightAmmo = maxAmmo;
     currentDeviation = 0.0f;
     presentlyReloading = false;
+    alive = true;
   }
 
   // Update is called once per frame
@@ -52,35 +56,54 @@ public class PlayerBehaviour : MonoBehaviour
   {
     handleUI();
 
-    //Deviation reduction over time
-    currentDeviation -= deviationReductionRate * Time.deltaTime;
-    if (currentDeviation <= 0.0f)
-      currentDeviation = 0.0f;
-    if (currentDeviation > maxDeviation)
-      currentDeviation = maxDeviation;
-
-    //Reloading
-    if (Input.GetKey(KeyCode.R) &&
-      (rightAmmo < maxAmmo || leftAmmo < maxAmmo))
+    if (alive)
     {
-      presentlyReloading = true;
+      //Deviation reduction over time
+      currentDeviation -= deviationReductionRate * Time.deltaTime;
+      if (currentDeviation <= 0.0f)
+        currentDeviation = 0.0f;
+      if (currentDeviation > maxDeviation)
+        currentDeviation = maxDeviation;
+
+      //Reloading
+      if (Input.GetKey(KeyCode.R) &&
+        (rightAmmo < maxAmmo || leftAmmo < maxAmmo))
+      {
+        presentlyReloading = true;
+      }
+      else
+      {
+        presentlyReloading = false;
+      }
+
+      if (!presentlyReloading)
+      {
+        reloadBar.SetActive(false);
+        reloadTimeRemaining = reloadTime;
+        handleMovement();
+        handleShooting();
+      }
+      else
+      {
+        reloadBar.SetActive(true);
+        handleReloading();
+      }
     }
     else
     {
-      presentlyReloading = false;
-    }
+      //Fall through the earth
+      GetComponent<BoxCollider2D>().enabled = false;
 
-    if (!presentlyReloading)
-    {
-      reloadBar.SetActive(false);
-      reloadTimeRemaining = reloadTime;
-      handleMovement();
-      handleShooting();
-    }
-    else
-    {
-      reloadBar.SetActive(true);
-      handleReloading();
+      //Prompt to restart the game
+      leftAmmoCounter.text = "";
+      rightAmmoCounter.text = "Delivery Failed. Press R to restart";
+
+      //Restart the game when R is pressed
+      if (Input.GetKey(KeyCode.R))
+      {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Time.timeScale = 1.0f;
+      }
     }
   }
 

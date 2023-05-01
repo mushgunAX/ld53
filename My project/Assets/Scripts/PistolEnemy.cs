@@ -8,6 +8,8 @@ public class PistolEnemy : MonoBehaviour
   public GameObject bullet;
   public int maxHealth;
   public int health;
+  private bool deadOnce;
+  private int lastFrameHealth;
   public float moveSpeed;
   public float moveForce;
   public float stunTime;
@@ -36,6 +38,12 @@ public class PistolEnemy : MonoBehaviour
 
   private Rigidbody2D rb;
 
+  [Header("Audio")]
+  public AudioSource dieSound;
+  public AudioSource hurtSound;
+  public AudioSource readySound;
+  public AudioSource shootSound;
+
   // Start is called before the first frame update
   void Start()
   {
@@ -49,13 +57,25 @@ public class PistolEnemy : MonoBehaviour
     burstShotsRemaining = burstAmount;
     timeLeftToShot = intraburstInterval + Random.Range(-intraburstIntervalVariance, intraburstIntervalVariance);
     movingTimeLeft = movingTime + Random.Range(-movingTimeVariance, movingTimeVariance);
+
+    deadOnce = false;
   }
 
   // Update is called once per frame
   void Update()
   {
+    if (health < lastFrameHealth)
+    {
+      hurtSound.Play();
+    }
+    lastFrameHealth = health;
+
     if (health <= 0)
     {
+      if (!deadOnce)
+        dieSound.Play();
+      deadOnce = true;
+
       Destroy(gameObject, 5.0f);
       GetComponent<BoxCollider2D>().enabled = false;
       //Alternate blink flashing
@@ -107,19 +127,36 @@ public class PistolEnemy : MonoBehaviour
           if (Mathf.Abs(rb.velocity.x) < moveSpeed)
             rb.AddForce(new Vector2((horizontalDisplacement > 0.0f ? -moveForce : moveForce), 0.0f));
 
-          //TODO facing
+          //Facing
+          if (horizontalDisplacement > 0.0f)
+          {
+            GetComponent<SpriteRenderer>().flipX = true;
+          }
+          else
+          {
+            GetComponent<SpriteRenderer>().flipX = false;
+          }
         }
         else
         {
           movingTimeLeft = movingTime + Random.Range(-movingTimeVariance, movingTimeVariance);
           isShooting = true;
-          //TODO play cocking sound
+          //Play cocking sound
+          readySound.Play();
         }
       }
       else
       {
         //Preparing to shoot
         //TODO facing
+        if (horizontalDisplacement > 0.0f)
+        {
+          GetComponent<SpriteRenderer>().flipX = false;
+        }
+        else
+        {
+          GetComponent<SpriteRenderer>().flipX = true;
+        }
         timeLeftToBurst -= Time.deltaTime;
         if (timeLeftToBurst <= 0.0f)
         {
@@ -130,7 +167,8 @@ public class PistolEnemy : MonoBehaviour
             {
               //Shoot
 
-              //TODO play shoot sound
+              //Play shoot sound
+              shootSound.Play();
 
               Vector3 baseDirection = playerTarget.transform.position - transform.position;
               float rotationAngle = Random.Range(-shotMaxDeviation, shotMaxDeviation);

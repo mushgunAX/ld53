@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class PlayerBehaviour : MonoBehaviour
 {
+  private bool deadOnce;
   public bool alive;
 
   //Parameters to tweak
@@ -41,6 +42,13 @@ public class PlayerBehaviour : MonoBehaviour
   public TextMeshProUGUI leftAmmoCounter;
   public GameObject reloadBar;
 
+  [Header("Audio")]
+  public AudioSource shootSound;
+  public AudioSource reloadSound;
+  public AudioSource reloadedSound;
+  public AudioSource dieSound;
+  public AudioSource emptySound;
+
   // Start is called before the first frame update
   void Start()
   {
@@ -49,6 +57,7 @@ public class PlayerBehaviour : MonoBehaviour
     currentDeviation = 0.0f;
     presentlyReloading = false;
     alive = true;
+    deadOnce = false;
   }
 
   // Update is called once per frame
@@ -69,6 +78,8 @@ public class PlayerBehaviour : MonoBehaviour
       if (Input.GetKey(KeyCode.R) &&
         (rightAmmo < maxAmmo || leftAmmo < maxAmmo))
       {
+        if (!presentlyReloading)
+          reloadSound.Play();
         presentlyReloading = true;
       }
       else
@@ -82,6 +93,7 @@ public class PlayerBehaviour : MonoBehaviour
         reloadTimeRemaining = reloadTime;
         handleMovement();
         handleShooting();
+        handleLooking();
       }
       else
       {
@@ -91,6 +103,10 @@ public class PlayerBehaviour : MonoBehaviour
     }
     else
     {
+      if (!deadOnce)
+        dieSound.Play();
+      deadOnce = true;
+
       //Fall through the earth
       GetComponent<BoxCollider2D>().enabled = false;
 
@@ -104,6 +120,18 @@ public class PlayerBehaviour : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         Time.timeScale = 1.0f;
       }
+    }
+  }
+
+  public void handleLooking()
+  {
+    if (crosshair.transform.position.x > transform.position.x)
+    {
+      GetComponent<SpriteRenderer>().flipX = false;
+    }
+    else
+    {
+      GetComponent<SpriteRenderer>().flipX = true;
     }
   }
 
@@ -147,7 +175,9 @@ public class PlayerBehaviour : MonoBehaviour
     reloadBar.transform.localScale = new Vector3(10.0f * (reloadTimeRemaining / reloadTime), reloadBar.transform.localScale.y, reloadBar.transform.localScale.z);
     if (reloadTimeRemaining <= 0.0f)
     {
-      //TODO play reloaded sound
+      //Play reloaded sound
+      reloadedSound.Play();
+
       if (rightAmmo < leftAmmo)
         rightAmmo = maxAmmo;
       else
@@ -164,7 +194,8 @@ public class PlayerBehaviour : MonoBehaviour
 
   public void gunShot()
   {
-    //TODO play BANG sound
+    //Play BANG sound
+    shootSound.Play();
 
     //Determine the shot direction
     //https://www.youtube.com/watch?v=HH6JzH5pTGo
@@ -194,7 +225,8 @@ public class PlayerBehaviour : MonoBehaviour
       }
       else
       {
-        //TODO play CHIK sound
+        //play CHIK sound
+        emptySound.Play();
       }
     }
     if (Input.GetMouseButtonDown(1))
@@ -206,7 +238,8 @@ public class PlayerBehaviour : MonoBehaviour
       }
       else
       {
-        //TODO play CHIK sound
+        //play CHIK sound
+        emptySound.Play();
       }  
     }
   }

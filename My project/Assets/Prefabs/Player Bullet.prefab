@@ -136,3 +136,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47022b38bae9262438ffe5e3084de122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ricochetSound: {fileID: 0}

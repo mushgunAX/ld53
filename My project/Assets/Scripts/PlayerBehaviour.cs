@@ -48,10 +48,14 @@ public class PlayerBehaviour : MonoBehaviour
   public AudioSource reloadedSound;
   public AudioSource dieSound;
   public AudioSource emptySound;
+  public AudioSource mainBGM;
+  public AudioSource bossBGM;
+  public AudioSource winBGM;
 
   // Start is called before the first frame update
   void Start()
   {
+    Cursor.visible = false;
     leftAmmo = maxAmmo;
     rightAmmo = maxAmmo;
     currentDeviation = 0.0f;
@@ -103,16 +107,22 @@ public class PlayerBehaviour : MonoBehaviour
     }
     else
     {
+      mainBGM.Stop();
+      bossBGM.Stop();
+      winBGM.Stop();
+
       if (!deadOnce)
         dieSound.Play();
       deadOnce = true;
+
+      GetComponent<SpriteRenderer>().flipY = true;
 
       //Fall through the earth
       GetComponent<BoxCollider2D>().enabled = false;
 
       //Prompt to restart the game
       leftAmmoCounter.text = "";
-      rightAmmoCounter.text = "Delivery Failed. Press R to restart";
+      rightAmmoCounter.text = "Delivery Failed. [R] to restart. [Esc] to quit";
 
       //Restart the game when R is pressed
       if (Input.GetKey(KeyCode.R))
@@ -120,6 +130,9 @@ public class PlayerBehaviour : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         Time.timeScale = 1.0f;
       }
+
+      if (Input.GetKey(KeyCode.Escape))
+        Application.Quit();
     }
   }
 

@@ -76,6 +76,8 @@ public class PistolEnemy : MonoBehaviour
         dieSound.Play();
       deadOnce = true;
 
+      GetComponent<SpriteRenderer>().flipY = true;
+
       Destroy(gameObject, 5.0f);
       GetComponent<BoxCollider2D>().enabled = false;
       //Alternate blink flashing
@@ -119,22 +121,33 @@ public class PistolEnemy : MonoBehaviour
 
       if (!isShooting)
       {
-        //Flee if horizontal displacement too near
-        if (Mathf.Abs(horizontalDisplacement) < minDistanceBeforeFleeing || movingTimeLeft > 0.0f)
+        //Move 
+        if (movingTimeLeft > 0.0f)
         {
           movingTimeLeft -= Time.deltaTime;
 
-          if (Mathf.Abs(rb.velocity.x) < moveSpeed)
-            rb.AddForce(new Vector2((horizontalDisplacement > 0.0f ? -moveForce : moveForce), 0.0f));
+          //Flee if horizontal displacement too near
+          if (Mathf.Abs(horizontalDisplacement) < minDistanceBeforeFleeing)
+          {
+            if (Mathf.Abs(rb.velocity.x) < moveSpeed)
+              rb.AddForce(new Vector2((horizontalDisplacement > 0.0f ? -moveForce : moveForce), 0.0f));
 
-          //Facing
-          if (horizontalDisplacement > 0.0f)
-          {
-            GetComponent<SpriteRenderer>().flipX = true;
+            //Facing
+            if (horizontalDisplacement > 0.0f)
+              GetComponent<SpriteRenderer>().flipX = true;
+            else
+              GetComponent<SpriteRenderer>().flipX = false;
           }
-          else
+          else //Approach
           {
-            GetComponent<SpriteRenderer>().flipX = false;
+            if (Mathf.Abs(rb.velocity.x) < moveSpeed)
+              rb.AddForce(new Vector2((horizontalDisplacement > 0.0f ? moveForce : -moveForce), 0.0f));
+
+            //Facing
+            if (horizontalDisplacement > 0.0f)
+              GetComponent<SpriteRenderer>().flipX = false;
+            else
+              GetComponent<SpriteRenderer>().flipX = true;
           }
         }
         else
@@ -148,7 +161,7 @@ public class PistolEnemy : MonoBehaviour
       else
       {
         //Preparing to shoot
-        //TODO facing
+        //Facing
         if (horizontalDisplacement > 0.0f)
         {
           GetComponent<SpriteRenderer>().flipX = false;

@@ -48,6 +48,7 @@ public class Door : MonoBehaviour
     }
     else
     {
+      Destroy(gameObject, 5.0f);
       GetComponent<SpriteRenderer>().color = Color.red;
 
       //Fade out
